@@ -1,16 +1,16 @@
-/* 
+/*
 The implementation follows the standard bag of tasks pattern.
 
 Farmer: after the initialization, the farmer loop is in execution until all workers
 have finished computing the area and the stack is empty. The loop starts with a wild-card
 synchronous MPI receive function and when data is received we check whether it is a new task
 or a computed area. If it is the former, we push onto the stack and if it is the latter, we
-add the value to the area total. We then increment idle_count and set the corresponding 
+add the value to the area total. We then increment idle_count and set the corresponding
 worker slot in worker_list to 1 (meaning available). If the stack is not empty,
 we iterate over the worker_list, starting from the last processed slot and look for
 available workers to send new tasks. Finally, when when the stack is empty and all workers
 are available, we have computed the area and the farmer process breaks the main loop and signals
-all workers to exit. 
+all workers to exit.
 
 Worker: the worker loop starts with synchronous MPI receive command and waits for
 input from the farmer. Once input is received, it is processed according to
@@ -19,16 +19,16 @@ When an exit signal is received, the worker terminates.
 
 MPI primitives: Synchronous blocking wild-card MPI receive is used on the farmer and helps
 avoid iterating over all workers with asynchronous receive to look for results. This also
-ensures synchronization with all workers. The send used requires neither the farmer nor the workers
+ensures synchronization with all workers. The send MPI used requires neither the farmer nor the workers
 to wait till data is received, providing it is known that it will be received eventually.
 
-I also considered using MPI gather, but that has a drawback over the current approach - 
-workers can finish their tasks at different speeds and waiting for input from all workers on 
-each iteration of the farmer loop would have likely negatively impacted overall performance. 
+I also considered using MPI gather, but that has a drawback over the current approach -
+workers can finish their tasks at different speeds and waiting for input from all workers on
+each iteration of the farmer loop would have likely negatively impacted overall performance.
 
 The code is tested on a Core 2 Duo processor (2 cores) and OpenMPI 1.4.3, so usleep is not used.
 
-$ mpirun -c 5 aquadPartA 
+$ mpirun -c 5 aquadPartA
 Area=7583461.801486
 
 Tasks Per Process
@@ -99,7 +99,7 @@ int main(int argc, char **argv ) {
 
 	if (myid == 0) { // Farmer
 		area = farmer(numprocs);
-	} 
+	}
 	else { //Workers
 		worker(myid);
 	}
@@ -135,7 +135,7 @@ double farmer(int numprocs) {
 	buff[0] = A;
 	buff[1] = B;
 	push(buff, bag);
-  
+
 	int i;
 	for (i=0;i<workers;i++){
 		worker_list[i] = 0;
@@ -147,7 +147,7 @@ double farmer(int numprocs) {
 		worker_list[status.MPI_SOURCE - 1] = 1;
 		if (status.MPI_TAG == 1) {
 			result += buff[0];
-		} 
+		}
 		else {
 			push(buff,bag);
       			MPI_Recv(buff, 2, MPI_DOUBLE, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
@@ -202,7 +202,7 @@ void worker(int mypid) {
 	    		}
 		}
 		else {
-			break; // exit 
+			break; // exit
 		}
   	}
 }
@@ -226,11 +226,11 @@ void push (double *data, stack *s) {
 	n = (stack_node *) malloc (sizeof(stack_node));
 	n->data[0] = data[0];
 	n->data[1] = data[1];
-  
+
 	if (s->top == NULL) {
 		n->next = NULL;
 		s->top  = n;
-	} 
+	}
 	else {
 		n->next = s->top;
 		s->top = n;
